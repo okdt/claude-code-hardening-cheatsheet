@@ -23,9 +23,9 @@ It covers what to block, what to allow, what to always ask about, and what to do
 
 ---
 
-## 2. Guidelines
+## 2. Permission System
 
-Claude Code's permission system determines what happens when a tool is invoked. Understanding these four levels is essential before configuring any rules.
+Claude Code's permission system determines what happens when a command or tool is invoked. Understanding these four levels is essential before configuring any rules.
 
 ### Permission levels
 
@@ -52,13 +52,19 @@ Claude Code's permission system determines what happens when a tool is invoked. 
 
 For your personal preferences on a specific project, use `.claude/settings.local.json` so you don't impose them on teammates.
 
+* A `deny` rule in any settings file cannot be overridden by `allow` in another. Conversely, an `allow` can be overridden by `deny` in another settings file.
+
 ---
 
 ## 3. Sandboxing
 
-The sandbox isolates Claude Code's file and network access at the OS level. Even if a deny rule is bypassed, the sandbox prevents access to resources outside defined boundaries. It is the strongest protection layer available.
+The sandbox isolates Claude Code's file and network access at the OS level. Even if a deny rule is bypassed, the sandbox prevents access to resources outside defined boundaries. It is the strongest protection layer available — consider it essential.
 
-Supported on macOS (Seatbelt), Linux, and WSL2 (bubblewrap). WSL1 is not supported.
+Supported on macOS (Seatbelt), Linux, and WSL2 (bubblewrap). WSL1 is not supported at the time of writing — please verify for your environment.
+
+### How to enable
+
+Run `/sandbox` in Claude Code's interactive mode. This opens a menu where you can enable sandboxing and configure its mode. The equivalent `settings.json` configuration is:
 
 ```json
 "sandbox": {
@@ -74,7 +80,7 @@ Supported on macOS (Seatbelt), Linux, and WSL2 (bubblewrap). WSL1 is not support
 |---------|-----|
 | `enabled: true` | Isolates file and network access at the OS level. Claude Code can only access the current working directory and explicitly allowed paths. |
 | `autoAllowBashIfSandboxed` | Reduces permission prompts for Bash commands — safe because the sandbox constrains their scope. |
-| `denyRead` | Blocks access to credential stores even within the sandbox. SSH keys, GPG keys, AWS credentials, and GCP configs should never be read by an AI assistant. |
+| `denyRead` | Blocks access to credential stores even within the sandbox. SSH keys, GPG keys, AWS credentials, and GCP configs should never be read directly by an AI assistant. Note: this can be bypassed if the path is passed as an argument to a Bash command (e.g., `cat ~/.ssh/id_rsa`) — which is why the sandbox and deny rules are complementary layers. |
 
 ---
 
@@ -152,14 +158,14 @@ An AI assistant should never escalate privileges. Even though `sudo` requires a 
 
 ### 4.5 Deny — Remote Code Execution via Pipe
 
-Prevent downloading and executing untrusted scripts in one step.
+Prevent downloading and executing untrusted scripts in one step. These rules do not affect web page access.
 
 ```json
 "Bash(curl *|*sh)",
 "Bash(wget *|*sh)"
 ```
 
-Piping remote scripts directly into a shell (`curl ... | sh`) is a classic supply chain attack vector. Claude Code may suggest this as a standard "install" step — and users tend to approve it reflexively because it *looks like* a normal installation procedure.
+Piping remote scripts directly into a shell (`curl ... | sh`) is a classic supply chain attack vector. Claude Code may suggest this as a standard "install" step — and users tend to approve it reflexively because it *looks like* a normal installation procedure. Better to let Claude Code tell you the command and run it yourself.
 
 ### 4.6 Deny — Remote Access
 
@@ -175,7 +181,7 @@ An AI assistant should not initiate remote connections. These commands can trans
 
 ### 4.7 Deny — macOS: Easy to Approve, Hard to Undo
 
-Block macOS commands that look harmless but can cause serious damage. Users tend to approve these without a second thought — that's exactly what makes them risky. Remove these rules if you are on Linux.
+Some macOS commands look harmless but can cause serious damage. Users tend to approve these without a second thought — that's exactly what makes them risky.
 
 ```json
 "Bash(open *)",
@@ -189,9 +195,11 @@ Block macOS commands that look harmless but can cause serious damage. Users tend
 | `osascript` | "Just automating Finder" | AppleScript can send emails, control apps, access keychain, and much more. |
 | `defaults write` | "Just changing a setting" | Can modify security-critical macOS preferences, disable Gatekeeper, or alter app behavior. |
 
+* These rules are not needed on other operating systems, but consider the same approach for your platform's equivalents (contributions welcome).
+
 ### 4.8 Deny — Package Publishing & Deployment
 
-Prevent accidental or autonomous publishing and deployment.
+Prevent unintended package publishing and deployment, even in CI/CD contexts.
 
 ```json
 "Bash(npm publish *)",
@@ -200,7 +208,7 @@ Prevent accidental or autonomous publishing and deployment.
 "Bash(*deploy*)"
 ```
 
-Publishing packages or triggering deployments should be a deliberate human action, not something an AI does autonomously. A single mistaken publish can affect every downstream consumer.
+Publishing packages or triggering deployments should be a deliberate human action. Unless explicitly designed into your workflow, an AI should not do this autonomously. A single mistaken publish can affect every downstream consumer.
 
 ### 4.9 Deny — Infrastructure
 
@@ -246,7 +254,7 @@ Consider adding more patterns for your environment:
 "Read(**/credentials*)"
 ```
 
-### 4.11 Deny — MCP Actions
+### 4.11 Deny — MCP Actions: Preventing Impersonation Messages
 
 Prevent Claude Code from sending messages on your behalf.
 
