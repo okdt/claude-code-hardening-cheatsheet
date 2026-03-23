@@ -78,6 +78,7 @@
       "Bash(kill -9 *)",
       // Privilege escalation
       "Bash(sudo *)",
+      "Bash(su *)",
 
       // Remote code execution via pipe
       "Bash(curl *|*sh)",

@@ -149,7 +149,8 @@ Prevent permission changes and process kills that could destabilize your environ
 Prevent Claude Code from running commands as root.
 
 ```json
-"Bash(sudo *)"
+"Bash(sudo *)",
+"Bash(su *)"
 ```
 
 An AI assistant should never escalate privileges. Even though `sudo` requires a password, denying it outright prevents Claude Code from even attempting to run commands as root.
