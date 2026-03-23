@@ -171,10 +171,25 @@ Publishing packages or triggering deployments should be a deliberate human actio
 Prevent autonomous changes to cloud infrastructure.
 
 ```json
-"Bash(terraform apply *)"
+"Bash(terraform apply *)",
+"Bash(terraform destroy *)",
+"Bash(kubectl apply *)",
+"Bash(kubectl delete *)",
+"Bash(helm install *)",
+"Bash(helm upgrade *)",
+"Bash(docker push *)",
+"Bash(aws * --no-cli-pager)",
+"Bash(gcloud * --quiet)"
 ```
 
-`terraform apply` creates, modifies, or destroys cloud infrastructure. This should always require explicit human approval.
+| Rule | Risk |
+|------|------|
+| `terraform apply / destroy` | Creates, modifies, or destroys cloud infrastructure. |
+| `kubectl apply / delete` | Deploys or removes workloads on Kubernetes clusters. |
+| `helm install / upgrade` | Installs or upgrades Kubernetes packages with broad cluster impact. |
+| `docker push` | Publishes container images to registries. |
+| `aws --no-cli-pager` | Runs AWS CLI without paging — easy to miss destructive output. |
+| `gcloud --quiet` | Runs GCP CLI without confirmation prompts. |
 
 ### Deny List — Sensitive File Access
 
@@ -203,11 +218,6 @@ Prevents Claude Code from sending Slack messages on your behalf. An AI assistant
 The deny rules above are a starting point. Consider adding rules for your environment:
 
 ```json
-// CI/CD tools
-"Bash(kubectl apply *)",
-"Bash(helm install *)",
-"Bash(docker push *)",
-
 // Database
 "Bash(psql *)",
 "Bash(mysql *)",

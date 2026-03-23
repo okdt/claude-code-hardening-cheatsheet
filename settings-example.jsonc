@@ -87,6 +87,14 @@
 
       // Infrastructure
       "Bash(terraform apply *)",
+      "Bash(terraform destroy *)",
+      "Bash(kubectl apply *)",
+      "Bash(kubectl delete *)",
+      "Bash(helm install *)",
+      "Bash(helm upgrade *)",
+      "Bash(docker push *)",
+      "Bash(aws * --no-cli-pager)",
+      "Bash(gcloud * --quiet)",
 
       // Sensitive file access
       "Read(**/.env)",
