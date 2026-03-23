@@ -6,11 +6,20 @@
 
 ## 1. はじめに
 
-Claude Code はユーザに代わってシェルコマンドの実行、ファイルの読み書き、外部サービスとの連携などを実施します。これは強力で、同時にリスクが伴います — ハルシネーション、暴走、あるいは悪意あるプロンプトインジェクションが意図しない操作を引き起こす可能性があります。
+Claude Code はユーザに代わってシェルコマンドの実行、ファイルの読み書き、外部サービスとの連携などを実施します。これは強力で、同時にリスクが伴います。このチートシートは `~/.claude/settings.json` を通じて Claude Code 環境をハードニング（堅牢化）するための実践ガイドです。最小権限の原則や Human In the Loop（HITL）をどのように実践するかを考えるのに良い題材でしょう。
 
-このチートシートは `~/.claude/settings.json` を通じて Claude Code 環境をハードニング(堅牢化)するための実践ガイドです。最小権限の原則や、Human In the Loop(HITL)をどのように実践するかを考えるのに良い題材でしょう。
+### リスク — なぜハードニングが必要か
 
-何をブロックし、何を許可し、何を常に確認すべきか、そして deny ルールだけでは不十分な場合にどうすべきかなどを解説します。なお、本ドキュメントの deny リストはサンプルであり、網羅的ではありません。出発点として利用し、自分の環境に合わせてカスタマイズしてください。もっとも、作者（[okdt](https://github.com/okdt)）がまず抑制したいと考えた操作ところからスタートしています。
+- **善意のやりすぎ** — Claude Code は技術的には正しくても、あなたの意図を超えた操作をすることがあります。「整理」のためにファイルを削除したり、「修正」のために force-push したり、頼んでいないパッケージをインストールしたり。（[OWASP LLM09: Overreliance](https://genai.owasp.org/llm-top-10/)）
+- **大きすぎる権限** — デフォルトでは、Claude Code はあなたのユーザーアカウントでできることは何でもできます。deny ルールがなければ、たった一度の「はい」で破壊的なコマンド、認証情報ファイル、リモートシステムへのアクセスを許してしまいます。（[OWASP LLM06: Excessive Agency](https://genai.owasp.org/llm-top-10/)）
+- **間接的プロンプトインジェクション** — Claude Code が処理するコンテンツ（ソースコード、ドキュメント、Webページ）に、その動作に影響を与える隠された指示が含まれている可能性があります。攻撃者は、Claude が通常の作業中に読むファイルや依存関係に悪意あるプロンプトを埋め込むことができます。（[OWASP LLM01: Prompt Injection](https://genai.owasp.org/llm-top-10/)）
+- **侵害された環境の影響範囲** — あなたのマシンが RCE、マルウェア、サプライチェーン攻撃の影響を受けた場合、Claude Code はその侵害を引き継ぎます。ハードニングはブラスト半径を制限します — 攻撃者が足がかりを得た後でも、Claude Code を*通じて*できることを最小限に抑えます。
+
+これらは仮定の話ではありません。ガードレールが存在する理由です。問題が起きたとき — そしてそれは必ず起きます — 被害を封じ込めるために。
+
+### このドキュメントについて
+
+何をブロックし、何を許可し、何を常に確認すべきか、そして deny ルールだけでは不十分な場合にどうすべきかなどを解説します。なお、本ドキュメントの deny リストはサンプルであり、網羅的ではありません。作者（[okdt](https://github.com/okdt)）がまず抑制したいと考えた操作からスタートしています。出発点として利用し、自分の環境に合わせてカスタマイズしてください。
 
 ---
 
@@ -355,3 +364,9 @@ Hooks の詳細は [hooks でワークフローを自動化する](https://code.
 ### コミュニティ
 
 - [Claude Codeの設定でやるべきセキュリティ対策](https://qiita.com/dai_chi/items/f6d5e907b9fee791b658)
+
+## 関連チートシート・参考文献
+
+- [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) — AIエージェントシステムの主要リスクとベストプラクティス：ツール権限の最小化、プロンプトインジェクション対策、Human-in-the-Loop など。
+- [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Prompt_Injection_Prevention_Cheat_Sheet.html) — プロンプトインジェクション攻撃への防御に関する技術ガイダンス。
+- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — LLM アプリケーションにおける脅威の全体像。

@@ -6,11 +6,20 @@
 
 ## 1. Introduction
 
-Claude Code can run shell commands, read and write files, and interact with external services on your behalf. This power comes with risk — hallucination, runaway behavior, or malicious prompt injection can lead to unintended actions.
+Claude Code can run shell commands, read and write files, and interact with external services on your behalf. This power comes with risk. This cheatsheet provides a practical guide to hardening your Claude Code environment through `~/.claude/settings.json` — applying the principle of least privilege and Human-in-the-Loop (HITL) controls.
 
-This cheatsheet provides a practical guide to hardening your Claude Code environment through `~/.claude/settings.json`. It covers what to block, what to allow, what to always ask about, and what to do when deny rules aren't enough.
+### Risks — Why Hardening Is Needed
 
-The deny list examples in this document are a sample of operations that the author ([okdt](https://github.com/okdt)) wanted to block first. They are not exhaustive. Use them as a starting point and customize for your own environment.
+- **Well-intentioned overreach** — Claude Code may take actions that are technically correct but go beyond what you intended: deleting files to "clean up," force-pushing to "fix" a branch, or installing packages you didn't ask for. ([OWASP LLM09: Overreliance](https://genai.owasp.org/llm-top-10/))
+- **Excessive permissions** — By default, Claude Code can do anything your user account can do. Without deny rules, a single "yes" can grant access to destructive commands, credential files, or remote systems. ([OWASP LLM06: Excessive Agency](https://genai.owasp.org/llm-top-10/))
+- **Indirect prompt injection** — The content Claude Code processes (source code, documents, web pages) may contain hidden instructions that influence its behavior. An attacker can embed malicious prompts in files or dependencies that Claude reads during normal work. ([OWASP LLM01: Prompt Injection](https://genai.owasp.org/llm-top-10/))
+- **Compromised environment** — If your machine is affected by RCE, malware, or a supply chain attack, Claude Code inherits that compromise. Hardening limits the blast radius — what an attacker can do *through* Claude Code even after gaining a foothold.
+
+These are not hypothetical. They are the reason guardrails exist: to ensure that when things go wrong — and they will — the damage is contained.
+
+### About This Document
+
+It covers what to block, what to allow, what to always ask about, and what to do when deny rules aren't enough. The deny list examples are a sample of operations that the author ([okdt](https://github.com/okdt)) wanted to block first. They are not exhaustive. Use them as a starting point and customize for your own environment.
 
 ---
 
@@ -353,3 +362,9 @@ For more on hooks, see [Claude Code Hooks Guide](https://code.claude.com/docs/en
 ### Community
 
 - [Claude Codeの設定でやるべきセキュリティ対策](https://qiita.com/dai_chi/items/f6d5e907b9fee791b658) (Japanese)
+
+## Related Cheat Sheets & Further Reading
+
+- [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) — Covers key risks and best practices for AI agent systems: tool permission minimization, prompt injection prevention, human-in-the-loop controls, and more.
+- [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Prompt_Injection_Prevention_Cheat_Sheet.html) — Technical guidance on defending against prompt injection attacks.
+- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — The broader threat landscape for LLM-powered applications.
