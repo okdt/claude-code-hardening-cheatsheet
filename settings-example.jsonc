@@ -40,6 +40,20 @@
     //   "mcp__claude_ai_Google_Calendar__gcal_get_event"
     // ],
 
+    // ── ask: always prompt, even if previously approved (HITL checkpoint) ──
+    // Uncomment the rules you need. These are examples.
+    // "ask": [
+    //   "Bash(git commit *)",
+    //   "Bash(git push *)",
+    //   "Bash(npm install *)",
+    //   "Bash(pip install *)",
+    //   "Bash(brew install *)",
+    //   "Bash(psql *)",
+    //   "Bash(mysql *)",
+    //   "Bash(mongosh *)",
+    //   "Bash(sqlite3 *)"
+    // ],
+
     // ── deny: always block, regardless of context ──
     "deny": [
       // Destructive git operations
