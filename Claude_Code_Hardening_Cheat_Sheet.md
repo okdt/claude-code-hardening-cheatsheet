@@ -21,7 +21,35 @@ It covers what to block, what to allow, what to always ask about, and what to do
 
 ---
 
-## 2. Permission System
+## 2. Sandboxing
+
+The sandbox isolates Claude Code's file and network access at the OS level. Even if a deny rule is bypassed, the sandbox prevents access to resources outside defined boundaries. It is the strongest protection layer available — consider it essential.
+
+Supported on macOS (Seatbelt), Linux, and WSL2 (bubblewrap). WSL1 is not supported at the time of writing — please verify for your environment.
+
+### How to enable
+
+Run `/sandbox` in Claude Code's interactive mode. This opens a menu where you can enable sandboxing and configure its mode. The equivalent `settings.json` configuration is:
+
+```json
+"sandbox": {
+  "enabled": true,
+  "autoAllowBashIfSandboxed": true,
+  "filesystem": {
+    "denyRead": ["~/.ssh", "~/.gnupg", "~/.aws", "~/.config/gcloud"]
+  }
+}
+```
+
+| Setting | Why |
+|---------|-----|
+| `enabled: true` | Isolates file and network access at the OS level. Claude Code can only access the current working directory and explicitly allowed paths. |
+| `autoAllowBashIfSandboxed` | Reduces permission prompts for Bash commands — safe because the sandbox constrains their scope. |
+| `denyRead` | Blocks access to credential stores even within the sandbox. SSH keys, GPG keys, AWS credentials, and GCP configs should never be read directly by an AI assistant. Note: this can be bypassed if the path is passed as an argument to a Bash command (e.g., `cat ~/.ssh/id_rsa`) — which is why the sandbox and deny rules are complementary layers. |
+
+---
+
+## 3. Permission System
 
 Claude Code's permission system determines what happens when a command or tool is invoked. Understanding these four levels is essential before configuring any rules.
 
@@ -51,34 +79,6 @@ Claude Code's permission system determines what happens when a command or tool i
 For your personal preferences on a specific project, use `.claude/settings.local.json` so you don't impose them on teammates.
 
 * A `deny` rule in any settings file cannot be overridden by `allow` in another. Conversely, an `allow` can be overridden by `deny` in another settings file.
-
----
-
-## 3. Sandboxing
-
-The sandbox isolates Claude Code's file and network access at the OS level. Even if a deny rule is bypassed, the sandbox prevents access to resources outside defined boundaries. It is the strongest protection layer available — consider it essential.
-
-Supported on macOS (Seatbelt), Linux, and WSL2 (bubblewrap). WSL1 is not supported at the time of writing — please verify for your environment.
-
-### How to enable
-
-Run `/sandbox` in Claude Code's interactive mode. This opens a menu where you can enable sandboxing and configure its mode. The equivalent `settings.json` configuration is:
-
-```json
-"sandbox": {
-  "enabled": true,
-  "autoAllowBashIfSandboxed": true,
-  "filesystem": {
-    "denyRead": ["~/.ssh", "~/.gnupg", "~/.aws", "~/.config/gcloud"]
-  }
-}
-```
-
-| Setting | Why |
-|---------|-----|
-| `enabled: true` | Isolates file and network access at the OS level. Claude Code can only access the current working directory and explicitly allowed paths. |
-| `autoAllowBashIfSandboxed` | Reduces permission prompts for Bash commands — safe because the sandbox constrains their scope. |
-| `denyRead` | Blocks access to credential stores even within the sandbox. SSH keys, GPG keys, AWS credentials, and GCP configs should never be read directly by an AI assistant. Note: this can be bypassed if the path is passed as an argument to a Bash command (e.g., `cat ~/.ssh/id_rsa`) — which is why the sandbox and deny rules are complementary layers. |
 
 ---
 
