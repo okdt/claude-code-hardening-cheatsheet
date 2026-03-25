@@ -7,7 +7,7 @@
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "filesystem": {
-      "denyRead": ["~/.ssh", "~/.gnupg", "~/.aws", "~/.config/gcloud"]
+      "denyRead": ["~/.ssh", "~/.gnupg", "~/.aws", "~/.config/gcloud", "~/.bash_history", "~/.zsh_history"]
     }
   },
   "permissions": {
