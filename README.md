@@ -2,11 +2,11 @@
 
 **[English version](README.en.md)**
 
-[Claude Code](https://code.claude.com/) の `~/.claude/settings.json` に適用するセキュリティ強化チートシートです。
+[Claude Code](https://code.claude.com/) の 環境に適用して**動作抑制をする**、セキュリティ堅牢化・チートシートです。生成するコードのセキュリティ堅牢化についてまとめたものではありません。
 
-Claude Code はシェルコマンドの実行、ファイルの読み取り、外部サービスとの連携が可能です。これらの設定は、Claude Code に**やらせるべきでないこと**を明確に制限し、安心して**やらせたいこと**に集中できるようにします。
+Claude Code はシェルコマンドの実行、ファイルの読み取り、外部サービスとの連携が可能です。このドキュメントで示す設定集により、Claude Code に**やらせるべきでないこと**を明確に制限し、安心して**やらせたいこと**に集中できるようにします。
 
-本チートシートは主に macOS 環境で執筆・検証していますが、ほとんどのルールは Linux や Windows（WSL）でもそのまま参考になります。プラットフォーム固有のルールにはその旨を明記しています。
+なお、本チートシートは主に macOS 環境で執筆・検証していますが、ほとんどのルールは Linux や Windows（WSL）でもそのまま参考になります。プラットフォーム固有のルールにはその旨を明記しています。
 
 - [Claude Code Hardening Cheatsheet (日本語)](Claude_Code_Hardening_Cheat_Sheet.ja.md)
 
