@@ -4,14 +4,14 @@
 
 ## 1. Introduction
 
-Claude Code can run shell commands, read and write files, and interact with external services on your behalf. This power comes with risk. This document is about controlling that risk. If you're a beginner, start with the "Sandboxing" section at minimum. If you're a technical lead, use this as a reference for establishing your team's baseline security policy.
+Claude Code can run shell commands, read and write files, and interact with external services on your behalf. This power comes with risk. The more it can do, the more it can do unintentionally. This document is about controlling that risk. If you're a beginner, start with the "Sandboxing" section at minimum. If you're a technical lead, use this as a reference for establishing your team's baseline security policy.
 
 ### Risks — Why Hardening (Security Hardening) Is Needed
 
 - **Well-intentioned overreach** — Claude Code may take actions that are technically correct but go beyond what you intended: deleting files to "clean up," force-pushing to "fix" a branch, or installing packages you didn't ask for. ([OWASP LLM09: Overreliance](https://genai.owasp.org/llm-top-10/))
 - **Excessive permissions** — By default, Claude Code can do anything your user account can do. Without deny rules, a single "yes" can grant access to destructive commands, credential files, or remote systems. ([OWASP LLM06: Excessive Agency](https://genai.owasp.org/llm-top-10/))
-- **Indirect prompt injection** — The content Claude Code processes (source code, documents, web pages) may contain hidden instructions that influence its behavior. An attacker can embed malicious prompts in files or dependencies that Claude reads during normal work. ([OWASP LLM01: Prompt Injection](https://genai.owasp.org/llm-top-10/))
-- **Compromised environment** — If your machine is affected by RCE, malware, or a supply chain attack, Claude Code inherits that compromise. Hardening limits the blast radius — what an attacker can do *through* Claude Code even after gaining a foothold.
+- **Indirect prompt injection** — The content Claude Code processes (source code, documents, web pages) can contain instructions that influence its behavior. An attacker can embed malicious prompts in files or dependencies that Claude reads during normal work. ([OWASP LLM01: Prompt Injection](https://genai.owasp.org/llm-top-10/))
+- **Limiting damage in an already-compromised environment** — If your machine is hit by RCE (Remote Code Execution), malware, or a supply chain attack, Claude Code falls under that compromise too. Hardening shrinks the blast radius — the scope of damage — so that even if an attacker uses Claude Code as a stepping stone, what they can do through it is limited.
 
 These are not hypothetical. They are the reason guardrails exist: to ensure that when things go wrong — and they will — the damage is contained.
 This cheatsheet provides a practical guide to hardening your Claude Code environment through `~/.claude/settings.json` — applying the principle of least privilege and Human-in-the-Loop (HITL) controls.
@@ -23,7 +23,7 @@ This cheatsheet provides a practical guide to hardening your Claude Code environ
 3. **Hooks (hooks + PreToolUse)** — A mechanism to automatically run shell scripts before and after tool invocations. Lets you inject fine-grained pattern matching and environment-specific custom checks that permissions' allow/deny alone can't handle.
 4. **Logging** — This may be needed in enterprise environments, or for debugging this hardening setup itself. We touch on it briefly.
 
-> **Key point:** Layering multiple defenses like this is known as **defense in depth**.
+> Layering multiple defenses like this is known as **defense in depth**.
 
 ### What about CLAUDE.md?
 
@@ -33,9 +33,9 @@ When something should not happen, stop it by force rather than by asking — fig
 
 ### About the examples
 
-Deny rules catch obvious cases. The sandbox prevents damage even when commands slip through. Hooks add environment-specific custom logic.
+Deny rules stop the basic cases, the sandbox restricts access based on boundary principles, and hooks let you add more detailed conditions on top. The three layers work in combination.
 
-This document covers what to block, what to allow, what to always ask about, and what to do when deny rules aren't enough. The deny list examples here are samples, not a complete list. They start from the perspective of what risks to suppress. This cheatsheet is primarily written and tested on macOS, but should be useful for Linux and Windows (WSL) as well.
+This document covers what to block, what to allow, what to always ask about, and what to do when deny rules aren't enough. The deny list examples here are samples, not a complete list. They start from the perspective of what risks to suppress. This cheatsheet is primarily written and tested on macOS, but should be useful for Linux and Windows (WSL: Windows Subsystem for Linux) as well.
 
 Customize for your own environment and risk profile.
 
@@ -43,7 +43,7 @@ Customize for your own environment and risk profile.
 
 ## 2. Sandboxing
 
-The sandbox isolates Claude Code's file and network access at the OS level. Even if a deny rule is bypassed, the sandbox prevents access to resources outside defined boundaries. It is the strongest protection layer available — consider it essential.
+The sandbox isolates Claude Code's file and network access at the OS level. Even if a deny rule is bypassed, the sandbox prevents access to resources outside defined boundaries. It's the strongest defense you can configure — enable it first.
 
 Supported on macOS (Seatbelt), Linux, and WSL2 (bubblewrap). WSL1 is not supported at the time of writing — please verify for your environment.
 
@@ -69,9 +69,9 @@ Supported on macOS (Seatbelt), Linux, and WSL2 (bubblewrap). WSL1 is not support
 |---------|-----|
 | `enabled: true` | Isolates file and network access at the OS level. Claude Code can only access the current working directory and explicitly allowed paths. |
 | `autoAllowBashIfSandboxed` | Reduces permission prompts for Bash commands — safe because the sandbox constrains their scope. |
-| `denyRead` | This is a bonus / customization section. Blocks access to credential stores even within the sandbox. In this example, SSH keys, GPG keys, AWS credentials, and GCP configs are configured so the AI assistant cannot read them directly. (However... this can be bypassed if the path is passed as an argument to a Bash command like `cat`, so the implementation is admittedly imperfect.) |
+| `denyRead` | This is a bonus / customization section. Blocks access to credential stores even within the sandbox. In this example, SSH keys, GPG keys, AWS credentials, and GCP configs are configured so the AI assistant cannot read them directly. (However... this can be bypassed via Bash, e.g. `cat ~/.ssh/id_rsa` — a little bit frustrating gap, frankly.) |
 
-> **Key point:** Designing defenses that minimize the scope of impact is known as the **principle of least privilege**.
+> Designing defenses that minimize the scope of impact is known as the **principle of least privilege**.
 
 ---
 
@@ -88,7 +88,7 @@ Use Claude Code's permission system to control what is allowed when a command or
 | `allow` | Always permitted (no prompt) | Convenience — for trusted operations where you want to skip confirmation |
 | _(default / not configured)_ | Prompted on first use; "don't ask again" makes it permanent | The default judgment is in your head — you may say yes too quickly when busy, or can't tell safe from unsafe when unsure. (Everyone occasionally doubts their own reliability.) |
 
-> **Key insight:** `deny` is for things that should **never** happen. `allow` is for things you **always** trust. `ask` is for things you **usually** trust but want to verify.
+> `deny` is for things that should **never** happen. `allow` is for things you **always** trust. `ask` is for things you **usually** trust but want to verify.
 
 ### Where to put rules
 
@@ -197,7 +197,7 @@ When sandbox mode is enabled, network access is blocked at the OS level, but Cla
 "Bash(rsync *)"
 ```
 
-If you need remote access, consider allowing specific targets instead of a blanket allow.
+If you need remote access, allow specific targets rather than a blanket allow.
 
 ### 4.7 Deny — Package Publishing & Deployment
 
@@ -223,7 +223,7 @@ Some macOS commands look harmless but can cause serious damage. Users tend to ap
 
 | Rule | Why it's easy to approve | Actual risk |
 |------|-------------------------|-------------|
-| `open` | "Just opening a file/URL" | Can launch arbitrary applications, open phishing URLs, or execute downloaded files. MCP browser tools (Puppeteer, etc.) do **not** use `open`, so browser automation is unaffected. |
+| `open` | "Just opening a file/URL" | Can launch arbitrary applications, open phishing URLs, or execute downloaded files. Browser automation tools (Puppeteer, etc.) control the browser directly without using `open`, so they are unaffected. |
 | `osascript` | "Just automating Finder" | AppleScript can send emails, control apps, access keychain, and much more. |
 | `defaults write` | "Just changing a setting" | Can modify security-critical macOS preferences, disable Gatekeeper, or alter app behavior. |
 
@@ -273,7 +273,7 @@ Consider adding more patterns for your environment:
 "Read(**/credentials*)"
 ```
 
-### 4.11 Deny — MCP Actions: Preventing Impersonation Messages
+### 4.11 Deny — MCP (Model Context Protocol) Actions: Preventing Impersonation Messages
 
 Prevent Claude Code from sending messages on your behalf (impersonation).
 An AI assistant reading messages for context is different from it **sending** messages — the latter should require your explicit action.
@@ -345,7 +345,7 @@ Examples:
 - `Bash(curl *|*sh)` blocks `curl url | sh` but not `wget -O- url | bash`
 - `Bash(rm -rf *)` blocks `rm -rf /tmp` but not a Makefile target that runs `rm -rf` internally
 
-This is where **Hooks** come in — custom shell scripts that run at specific points in Claude Code's lifecycle. The most important is **before a tool call is executed** (`PreToolUse`). Unlike deny rules that can only match command patterns, a hook script receives the full command as JSON input and can apply arbitrary logic: inspect arguments, check file contents, query external systems, or block the call.
+This is where **Hooks** come in — shell scripts that run at specific points in Claude Code's lifecycle. The most useful one is `PreToolUse` — right before a tool call executes. Deny rules only do pattern matching on the command string, so they can only judge whether the surface text matches. Hooks receive the full command as JSON, allowing much finer-grained decisions. See the examples below.
 
 ### Detailed explanation
 
