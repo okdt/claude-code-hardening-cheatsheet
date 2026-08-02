@@ -3,11 +3,29 @@
 // See Claude_Code_Hardening_Cheat_Sheet.md for the rationale behind each rule.
 // Sandbox: macOS (Seatbelt), Linux/WSL2 (bubblewrap). WSL1 not supported.
 {
+  // How many days transcripts and session logs stay on disk. Default when unset is 30.
+  // Don't rely on the default — this is the window a leaked secret stays around in.
+  "cleanupPeriodDays": 30,
+
+  // Trim what leaves the machine. DISABLE_AUTOUPDATER also stops security fixes, so it's
+  // deliberately not here. Never put secret VALUES in this block — see Section 7.
+  "env": {
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1"
+  },
+
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
+    // "failIfUnavailable": true,         // refuse to start unless the sandbox initializes (deps/platform); without it Claude Code silently runs UNSANDBOXED
+    // "allowUnsandboxedCommands": false, // Strict mode: ignore the dangerouslyDisableSandbox escape hatch entirely
     "filesystem": {
       "denyRead": ["~/.ssh", "~/.gnupg", "~/.aws", "~/.config/gcloud", "~/.bash_history", "~/.zsh_history"]
+    },
+    "network": {
+      // No domains are pre-allowed by default; a new domain prompts on first use. List your common ones here.
+      "allowedDomains": ["github.com", "registry.npmjs.org", "pypi.org"]
+      // "deniedDomains": ["internal.example.corp"]  // block specific hosts even if a broad allowedDomains wildcard matches
     }
   },
   "permissions": {
@@ -43,6 +61,7 @@
     // ── ask: always prompt, even if previously approved (HITL checkpoint) ──
     // Uncomment the rules you need. These are examples.
     // "ask": [
+    //   "Bash(git add .)",        // moved from deny: handy daily, but confirm what gets staged
     //   "Bash(git commit *)",
     //   "Bash(git push *)",
     //   "Bash(npm install *)",
@@ -51,7 +70,12 @@
     //   "Bash(psql *)",
     //   "Bash(mysql *)",
     //   "Bash(mongosh *)",
-    //   "Bash(sqlite3 *)"
+    //   "Bash(sqlite3 *)",
+    //   "Bash(open *)",          // moved from deny: legit daily use, but prompt each time (phishing URLs / arbitrary apps)
+    //   "Bash(curl *)",          // fetching is routine; the prompt shows the full command, pipe included
+    //   "Bash(wget *)",
+    //   "Bash(aws *)",           // moved from deny: a pattern can't tell `s3 ls` from `s3 rm`
+    //   "Bash(gcloud *)"
     // ],
 
     // ── deny: always block, regardless of context ──
@@ -61,13 +85,15 @@
       "Bash(git push --force *)",
       "Bash(git reset --hard *)",
       "Bash(git checkout .)",
+      "Bash(git restore *)",   // successor to `git checkout --`; also stops the harmless `--staged` form
       "Bash(git clean -f *)",
-      "Bash(git add .)",
       "Bash(git add -A)",
 
       // Destructive file operations
       "Bash(rm -rf *)",
       "Bash(rm -r *)",
+      // "Bash(rm *)",          // stronger: ban rm outright and have deletions moved to trash/ instead
+      //                        // spelling variants like `rm -fr` / `rm -Rf` slip past the two rules above
 
       // Dangerous system operations
       "Bash(chmod 777 *)",
@@ -80,12 +106,14 @@
       "Bash(sudo *)",
       "Bash(su *)",
 
-      // Remote code execution via pipe
-      "Bash(curl *|*sh)",
-      "Bash(wget *|*sh)",
+      // Remote code execution via pipe — block the interpreter, not the fetcher.
+      // A pattern containing a pipe never matches: rules are evaluated per subcommand,
+      // so `curl url | sh` is checked as `curl url` and `sh` separately.
+      "Bash(sh *)",
+      "Bash(bash *)",
+      "Bash(zsh *)",
 
       // macOS only — remove these if you're on Linux/Windows
-      "Bash(open *)",
       "Bash(osascript *)",
       "Bash(defaults write *)",
 
@@ -108,12 +136,13 @@
       "Bash(helm install *)",
       "Bash(helm upgrade *)",
       "Bash(docker push *)",
-      "Bash(aws * --no-cli-pager)",
-      "Bash(gcloud * --quiet)",
+      // aws / gcloud are in "ask" instead: a pattern can't tell `s3 ls` from `s3 rm`
 
-      // Sensitive file access
+      // Sensitive file access — Read blocks reading, Edit blocks every file-writing tool
       "Read(**/.env)",
       "Read(**/.env.*)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
 
       // MCP actions (sending)
       "mcp__claude_ai_Slack__slack_send_message",
