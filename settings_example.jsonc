@@ -1,6 +1,6 @@
 // Claude Code Setting Hardening Example
 // Customize and copy to ~/.claude/settings.json (remove comments)
-// See Claude_Code_Hardening_Cheat_Sheet.md for the rationale behind each rule.
+// See Claude_Code_Hardening_Cheat_Sheet.en.md (or .ja.md) for the rationale behind each rule.
 // Sandbox: macOS (Seatbelt), Linux/WSL2 (bubblewrap). WSL1 not supported.
 {
   // How many days transcripts and session logs stay on disk. Default when unset is 30.
@@ -8,7 +8,7 @@
   "cleanupPeriodDays": 30,
 
   // Trim what leaves the machine. DISABLE_AUTOUPDATER also stops security fixes, so it's
-  // deliberately not here. Never put secret VALUES in this block — see Section 7.
+  // deliberately not here. Never put secret VALUES in this block — see Section 6.
   "env": {
     "DISABLE_TELEMETRY": "1",
     "DISABLE_ERROR_REPORTING": "1"
@@ -25,7 +25,9 @@
     "network": {
       // No domains are pre-allowed by default; a new domain prompts on first use. List your common ones here.
       "allowedDomains": ["github.com", "registry.npmjs.org", "pypi.org"]
-      // "deniedDomains": ["internal.example.corp"]  // block specific hosts even if a broad allowedDomains wildcard matches
+      // To block specific hosts even under a broad allowedDomains wildcard, add a comma
+      // to the line above and uncomment the next one:
+      // , "deniedDomains": ["internal.example.corp"]
     }
   },
   "permissions": {

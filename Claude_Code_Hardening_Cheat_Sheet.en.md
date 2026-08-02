@@ -133,8 +133,16 @@ Look at the fourth row. **An escape doesn't automatically mean "allow it."** Rea
 
 If you want to go all the way on hardening, consider these too.
 
-- **`failIfUnavailable: true`** — when a dependency like bubblewrap is missing, or the platform is unsupported, Claude Code by default **just prints a warning and starts up with no sandbox** (your strongest layer drops silently). Set this to `true,` and it refuses to start unless the sandbox comes up. For teams or CI that need "sandbox required" to actually mean it.
-- **`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` (environment variable)** — sandboxed Bash inherits the parent process's environment as-is, which means any API key or cloud credential sitting in an env var is visible to child processes. Set this variable to strip Anthropic and cloud-provider credentials from subprocesses.
+- **`failIfUnavailable: true`** — when a dependency like bubblewrap is missing, or the platform is unsupported, Claude Code by default **just prints a warning and starts up with no sandbox** (your strongest layer drops silently). Set this to `true` and it refuses to start unless the sandbox comes up. For teams or CI that need "sandbox required" to actually mean it.
+- **`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` (environment variable)** — sandboxed Bash inherits the parent process's environment as-is, which means any API key or cloud credential sitting in an env var is visible to child processes. Setting this strips Anthropic and cloud-provider credentials from subprocesses. The value is just `"1"`, and it goes in the `env` block of `settings.json`:
+
+  ```json
+  "env": {
+    "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1"
+  }
+  ```
+
+  Anything in `env` reaches both the session and the child processes it starts. Exporting `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` in your shell before launching `claude` does the same thing.
 
 ### Know the limits
 
@@ -280,7 +288,7 @@ Block the interpreter instead of the fetcher.
 
 The right-hand side of the pipe is matched by itself, so this stops `curl ... | sh` and `wget -O- ... | bash` alike — and it doesn't care which fetcher was used. The download-then-run form, `curl -o /tmp/a.sh && sh /tmp/a.sh`, is stopped for the same reason. The `sudo bash` variant is covered by `Bash(sudo *)` in Section 4.4.
 
-`curl` and `wget` themselves remain in the' deny' list and go to the `ask` list in Section 4.12. Fetching is too routine to block outright — deny it and you'll end up deleting the rule. With `ask`, the prompt shows the full command, including the pipe, so you can catch it right there.
+`curl` and `wget` themselves stay out of the deny list and go to the `ask` list in Section 4.12. Fetching is too routine to block outright — deny it and you'll end up deleting the rule. With `ask`, the prompt shows the full command, including the pipe, so you can catch it right there.
 
 Two limits are worth stating. `curl ... | python -` is not stopped by the rules above; enumerating interpreters is that losing game again, and from this point on it's the network allowlist in Section 2 that does the work, since an unapproved domain is unreachable to begin with. And legitimate runs like `bash build.sh` are stopped too, so move `bash` to `ask` if that gets in your way.
 
@@ -707,7 +715,7 @@ Operations blocked by deny rules appear in the session, but by default nothing i
 
 **Log it from your own hook.** Writing a log from `PreToolUse`, the way Use case 4 does, is quick and readable with a plain `grep`. Note though that `PreToolUse` runs *before* the permission decision, so what you get is "here's what Claude tried to run," not "this one was denied." The blocking hooks (Use cases 1–3) are different: the moment of the block happens inside your own script, so one extra line before `exit 2` records the outcome as well.
 
-**Send it to OpenTelemetry.** For the verdict itself, this is the route ([official docs](https://code.claude.com/docs/en/monitoring-usage)). The `claude_code.tool_decision` event carries `decision` (accept/reject) and `source` (`config` for a deny rule in settings, `hook`, `user_reject`, and so on), so you can tell **what blocked it **. For a team or an enterprise that aggregates and analyzes this, it's the real answer.
+**Send it to OpenTelemetry.** For the verdict itself, this is the route ([official docs](https://code.claude.com/docs/en/monitoring-usage)). The `claude_code.tool_decision` event carries `decision` (accept/reject) and `source` (`config` for a deny rule in settings, `hook`, `user_reject`, and so on), so you can tell **what blocked it**. For a team or an enterprise that aggregates and analyzes this, it's the real answer.
 
 ---
 
