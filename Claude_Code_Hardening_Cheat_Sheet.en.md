@@ -127,7 +127,9 @@ Work down from the top. You don't have to fix everything at once — clearing th
 
 Look at the fourth row. **An escape doesn't automatically mean "allow it."** Reading the log sometimes tells you that this is something you never wanted run in the first place, and what belongs there is a deny rule, not a wider allowlist. The log isn't only material for opening things up.
 
-**Check that it goes quiet.** After you widen an allowlist, run for a while and see whether the log stops. If it doesn't, that's a signal there's still a hole. This back-and-forth *is* the work of shaping a configuration you don't have to escape from.
+**Check that it worked.** After you widen an allowlist, use it for a while and see whether the same reason stops showing up. If it still escapes, the setting didn't reach far enough.
+
+Once the tuning is done, the contents of this log (`~/.claude/logs/sandbox-bypass.tsv`) have served their purpose. Feel free to throw them away.
 
 ### Tightening further (optional)
 
@@ -237,7 +239,7 @@ Here's something I do myself: ban `rm` outright, and have anything you want gone
 "Bash(rm *)"
 ```
 
-The ban isn't the point — the alternative is. Put "delete by moving to `trash/`, not with `rm`" in your `CLAUDE.md,` and Claude will offer that route from the start.
+The ban isn't the point — the alternative is. Put "delete by moving to `trash/`, not with `rm`" in your `CLAUDE.md`, and Claude will offer that route from the start.
 
 This works because **the sandbox does not protect the inside of your working directory**. Writes are permitted in the current directory and the session temp directory, so `rm -rf ./src` is entirely legal as far as the OS is concerned. Your own workspace is guarded by deny rules or by nothing.
 
@@ -544,7 +546,7 @@ fi
 exit 0
 ```
 
-This is still enumerating command names, so it's not airtight. Write `python3.12` instead of `python,` and it slips by; write the script to a file first, and there's nothing in the command string to match at all. The way to actually seal a path is `filesystem.denyRead` in Section 2 — the OS stops the process that used to open the file. Treat this hook as the fallback for environments where you can't run the sandbox.
+This is still enumerating command names, so it's not airtight. Write `python3.12` instead of `python`, and it slips by; write the script to a file first, and there's nothing in the command string to match at all. The way to actually seal a path is `filesystem.denyRead` in Section 2 — the OS stops the process that used to open the file. Treat this hook as the fallback for environments where you can't run the sandbox.
 
 **Settings** — same structure, same matcher:
 
@@ -644,7 +646,17 @@ LOG=~/.claude/logs/sandbox-bypass.tsv
 DISABLED=$(echo "$INPUT" | jq -r '.tool_input.dangerouslyDisableSandbox // false')
 if [ "$DISABLED" = "true" ]; then
   CMD=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+
+  # Strip the shapes a secret usually takes before writing
+  CMD=$(printf '%s' "$CMD" | sed -E \
+    -e 's/([A-Za-z_]*(KEY|SECRET|TOKEN|PASSWORD|PASSWD)[A-Za-z_]*=)[^ ]*/\1***/g' \
+    -e 's/(--(password|token|api-key|apikey|secret)[= ])[^ ]*/\1***/g' \
+    -e 's/(Bearer )[A-Za-z0-9._~+\/-]+/\1***/g' \
+    -e 's#(https?://)[^/ :]+:[^/ @]+@#\1***:***@#g' \
+    -e 's/([?&](access_token|token|sig|signature|key)=)[^ &]*/\1***/g')
+
   mkdir -p "$(dirname "$LOG")"
+  umask 077                      # create the log readable only by you
   printf '%s\t%s\n' "$(date -Iseconds)" "$CMD" >> "$LOG"
 fi
 
@@ -676,6 +688,16 @@ chmod +x ~/.claude/hooks/log-sandbox-bypass.sh
 ```
 
 Now `~/.claude/logs/sandbox-bypass.tsv` holds a chronological record of every moment the sandbox was dropped, as a `timestamp \t command` TSV. Unlike Use cases 1–3, which block, this one **observes** without stopping anything.
+
+This log holds whole command lines, so a secret can land in it. What actually helps, in that order, is **making the file readable only by you** and **dropping old lines so only recent ones remain**. The masking above sits in front of those as a consolation: a token in a shape it doesn't know about goes straight through. Take it as a sample of the effort masking costs if you do it at all.
+
+`cleanupPeriodDays` (Section 7) covers the transcripts under `~/.claude/projects/` and not this file, so trim it yourself now and then.
+
+```bash
+tail -n 500 ~/.claude/logs/sandbox-bypass.tsv > /tmp/sb.tsv && mv /tmp/sb.tsv ~/.claude/logs/sandbox-bypass.tsv
+```
+
+The last few hundred lines are all you need for tuning. Keeping more leaves more secrets around than it buys you in insight.
 
 Reading the log, and turning what you find into settings, is covered in "Turning escape records into better settings" in Section 2.
 

@@ -129,7 +129,9 @@ cut -f2 ~/.claude/logs/sandbox-bypass.tsv | sort | uniq -c | sort -rn | head
 
 4 行目に注意してください。**「外れているから許可する」とは限りません。** ログを見て「これはそもそもやらせたくない操作だ」と気づくこともあります。その場合に足すべきは許可リストではなく deny ルールです。ログは許可を広げるためだけの材料ではありません。
 
-**静かになったか確かめる。** 許可リストを追加したら、しばらく運用してログが止まるかを見ます。止まらなければ、まだ穴があるというシグナルです。この往復が、サンドボックスを外さずに済む設定へ寄せていく作業そのものです。
+**効いたか確かめる。** 許可リストを追加したら、しばらく使ってみて、同じ理由で外れなくなったかを見ます。まだ外れるなら、設定が足りていません。
+
+調整しおわったら、このログ（`~/.claude/logs/sandbox-bypass.tsv`）の内容は不要です。捨ててしまって構いません。
 
 ### さらに厳格にする（任意）
 
@@ -663,7 +665,17 @@ LOG=~/.claude/logs/sandbox-bypass.tsv
 DISABLED=$(echo "$INPUT" | jq -r '.tool_input.dangerouslyDisableSandbox // false')
 if [ "$DISABLED" = "true" ]; then
   CMD=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+
+  # 秘密が載りうる形を落としてから書く
+  CMD=$(printf '%s' "$CMD" | sed -E \
+    -e 's/([A-Za-z_]*(KEY|SECRET|TOKEN|PASSWORD|PASSWD)[A-Za-z_]*=)[^ ]*/\1***/g' \
+    -e 's/(--(password|token|api-key|apikey|secret)[= ])[^ ]*/\1***/g' \
+    -e 's/(Bearer )[A-Za-z0-9._~+\/-]+/\1***/g' \
+    -e 's#(https?://)[^/ :]+:[^/ @]+@#\1***:***@#g' \
+    -e 's/([?&](access_token|token|sig|signature|key)=)[^ &]*/\1***/g')
+
   mkdir -p "$(dirname "$LOG")"
+  umask 077                      # 本人だけが読める権限でログを作る
   printf '%s\t%s\n' "$(date -Iseconds)" "$CMD" >> "$LOG"
 fi
 
@@ -695,6 +707,16 @@ chmod +x ~/.claude/hooks/log-sandbox-bypass.sh
 ```
 
 これで `~/.claude/logs/sandbox-bypass.tsv` に「サンドボックスを外した瞬間」が「日時 \t コマンド」の TSV で残ります。ブロックする活用例1〜3とは逆に、止めずに**観測する**フックです。
+
+このログはコマンド全文なので、秘密が載ることがあります。効くのは順に、**本人しか読めない権限にすること**と、**古い行を捨てて直近だけ残すこと**です。上のマスキングはその手前の気休めで、知らない形のトークンは素通りします。やるならこの程度は要る、という見本と考えてください。
+
+`cleanupPeriodDays`（§7）が効くのは `~/.claude/projects/` の transcript だけで、このファイルは対象外です。自分で切り詰めます。
+
+```bash
+tail -n 500 ~/.claude/logs/sandbox-bypass.tsv > /tmp/sb.tsv && mv /tmp/sb.tsv ~/.claude/logs/sandbox-bypass.tsv
+```
+
+調整に使うのは直近の数百行で足ります。古い記録を残しても、得られるものより残る秘密の方が大きくなります。
 
 溜まったログの読み方と、そこから設定へ落とすところまでは §2 の「無効化の記録を設定改善につなげる」に書いてあります。
 
