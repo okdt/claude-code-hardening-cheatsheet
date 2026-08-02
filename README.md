@@ -11,14 +11,26 @@ Claude Code を安全寄りに運用するための、日本語チートシー�
 
 これは Anthropic 公式ドキュメントではありません。実運用前に、利用中の Claude Code バージョンと公式情報を必ず確認してください。
 
+**バージョン 1.2（2026-08-02）／検証環境: Claude Code v2.1.220、macOS。** 記述は公式ドキュメントと実機の双方で確認しています。
+
 ## Included Files
 
 - [Claude_Code_Hardening_Cheat_Sheet.ja.md](./Claude_Code_Hardening_Cheat_Sheet.ja.md)
   一般的なハードニングの考え方、Claude Code の推奨設定、運用上の注意点をまとめた本体
-- [Claude_Code_Hardening_Cheat_Sheet.md](./Claude_Code_Hardening_Cheat_Sheet.en.md)
+- [Claude_Code_Hardening_Cheat_Sheet.en.md](./Claude_Code_Hardening_Cheat_Sheet.en.md)
   An English companion version kept aligned with the Japanese cheatsheet
 - [settings_example.jsonc](./settings_example.jsonc)
   コメント付きの `settings.json` テンプレート — 全ルールと allow/ask の例をコメントアウトで収録
+- [Claude_Code_Hardening_Audit_Prompt.ja.md](./Claude_Code_Hardening_Audit_Prompt.ja.md) / [.en.md](./Claude_Code_Hardening_Audit_Prompt.en.md)
+  チートシートごと Claude Code に読ませて、自分の環境のチェックと改善を進めるためのプロンプト
+- [EDITORIAL.md](./EDITORIAL.md)
+  このチートシートを改訂するときの編集方針（コントリビューター向け）
+
+## 1.2 の主な変更（2026-08-02）
+
+- シークレットと認証情報、データ保持、設定の確認、の 3 章を追加
+- 環境のチェックと改善を進めるためのプロンプトを同梱
+- deny / ask ルールを見直し
 
 ## How To Use
 
@@ -31,6 +43,17 @@ Claude Code を安全寄りに運用するための、日本語チートシー�
 - **上級者:** Hooks（セクション5）で、パターンマッチでは対応できないカスタムチェックを追加してください
 
 設定テンプレート [`settings_example.jsonc`](settings_example.jsonc) には全ルールと allow/ask の例がコメント付きで収録されています。必要なルールを選んで `settings.json` に転記してください（コメント行はそのままでは使えません）。
+
+### 手元に置いて、Claude Code に読ませる
+
+チートシートと監査プロンプトを手元に落としておくと、あなたの Claude Code に自分の環境を見直させられます。
+
+```bash
+curl -O https://raw.githubusercontent.com/okdt/claude-code-hardening-cheatsheet/main/Claude_Code_Hardening_Cheat_Sheet.ja.md
+curl -O https://raw.githubusercontent.com/okdt/claude-code-hardening-cheatsheet/main/Claude_Code_Hardening_Audit_Prompt.ja.md
+```
+
+そのディレクトリで Claude Code を起動し、`Claude_Code_Hardening_Audit_Prompt.ja.md` の中身をそのまま貼ってください。
 
 ## Scope
 
@@ -69,4 +92,4 @@ Riotaro OKADA ([okdt](https://github.com/okdt))
 
 ## Related Document
 
-- [Codex CLI Hardening Cheatsheet](https://github.com/okdt/codex-hardening-cheatsheet) — OpenAI Codex CLI 版のハードニングチートシート
+- [Codex CLI Hardening Cheatsheet](https://github.com/okdt/codex-cli-hardening-cheatsheet) — OpenAI Codex CLI 版のハードニングチートシート

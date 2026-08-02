@@ -1,1 +1,13 @@
 .DS_Store
+
+# secrets — never commit (global rule)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Do not ship instructions that would load into a reader's session.
+# CLAUDE.md and .claude/ are read automatically by Claude Code in whatever
+# directory it starts in — committing ours would apply our rules to theirs.
+CLAUDE.md
+.claude/

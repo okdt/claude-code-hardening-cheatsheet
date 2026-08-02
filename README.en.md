@@ -11,14 +11,26 @@ This repository has two goals:
 
 This is not official Anthropic documentation. Always verify against the official docs and your current Claude Code version before applying to production.
 
+**Version 1.2 (2026-08-02) / Verified against Claude Code v2.1.220, macOS.** Everything here has been checked against both the official documentation and a live install.
+
 ## Included Files
 
+- [Claude_Code_Hardening_Cheat_Sheet.en.md](./Claude_Code_Hardening_Cheat_Sheet.en.md)
+  Main cheatsheet — hardening principles, recommended settings, and operational notes
 - [Claude_Code_Hardening_Cheat_Sheet.ja.md](./Claude_Code_Hardening_Cheat_Sheet.ja.md)
-  Main cheatsheet — hardening principles, recommended settings, and operational notes (Japanese)
-- [Claude_Code_Hardening_Cheat_Sheet.md](./Claude_Code_Hardening_Cheat_Sheet.md)
-  English companion version kept aligned with the Japanese cheatsheet
+  The Japanese original, which the English version is kept aligned with
 - [settings_example.jsonc](./settings_example.jsonc)
   Commented `settings.json` template — all rules with allow/ask examples in comments
+- [Claude_Code_Hardening_Audit_Prompt.en.md](./Claude_Code_Hardening_Audit_Prompt.en.md) / [.ja.md](./Claude_Code_Hardening_Audit_Prompt.ja.md)
+  A prompt for handing the cheatsheet to Claude Code and working through your own environment with it
+- [EDITORIAL.md](./EDITORIAL.md)
+  Editorial policy for revising this cheatsheet (for contributors, written in Japanese)
+
+## What's new in 1.2 (2026-08-02)
+
+- Three new sections: secrets and credentials, data retention, and checking that your settings are in effect
+- A prompt for running a check-and-improve pass on your own environment
+- Revised deny / ask rules
 
 ## How To Use
 
@@ -29,6 +41,17 @@ This document is structured for progressive adoption, from beginners looking for
 - **Advanced:** Add custom checks with Hooks (Section 5) for cases that pattern matching cannot handle
 
 The template [`settings_example.jsonc`](settings_example.jsonc) contains all rules with commented allow/ask examples. Pick the rules you need and copy them into your `settings.json` (comment lines must be removed first).
+
+### Keep it locally and hand it to Claude Code
+
+With the cheatsheet and the audit prompt on your machine, you can have your own Claude Code work through your environment with you.
+
+```bash
+curl -O https://raw.githubusercontent.com/okdt/claude-code-hardening-cheatsheet/main/Claude_Code_Hardening_Cheat_Sheet.en.md
+curl -O https://raw.githubusercontent.com/okdt/claude-code-hardening-cheatsheet/main/Claude_Code_Hardening_Audit_Prompt.en.md
+```
+
+Start Claude Code in that directory and paste the contents of `Claude_Code_Hardening_Audit_Prompt.en.md`.
 
 ## Scope
 
@@ -67,4 +90,4 @@ Riotaro OKADA ([okdt](https://github.com/okdt))
 
 ## Related Document
 
-- [Codex CLI Hardening Cheatsheet](https://github.com/okdt/codex-hardening-cheatsheet) — Hardening cheatsheet for OpenAI Codex CLI
+- [Codex CLI Hardening Cheatsheet](https://github.com/okdt/codex-cli-hardening-cheatsheet) — Hardening cheatsheet for OpenAI Codex CLI
