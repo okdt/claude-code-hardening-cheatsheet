@@ -15,7 +15,7 @@ Claude Code runs shell commands, reads and writes files, and talks to external s
 - **Well-intentioned overreach** — Claude Code may take actions that are technically correct but go beyond what you intended: deleting files to "clean up," force-pushing to "fix" a branch, or installing packages you didn't ask for. ([OWASP LLM09: Overreliance](https://genai.owasp.org/llm-top-10/))
 - **Excessive permissions** — By default, Claude Code can do anything your user account can do. Without deny rules, a single "yes" can grant access to destructive commands, credential files, or remote systems. ([OWASP LLM06: Excessive Agency](https://genai.owasp.org/llm-top-10/))
 - **Indirect prompt injection** — The content Claude Code processes (source code, documents, web pages) can contain instructions that influence its behavior. An attacker can embed malicious prompts in files or dependencies that Claude reads as part of normal operation. ([OWASP LLM01: Prompt Injection](https://genai.owasp.org/llm-top-10/))
-- **More places for secrets to sit** — configuration files, environment variables, and the conversation transcript. Using Claude Code introduces places where an API key or token can be exposed in plaintext, and if any part of your home directory syncs to the cloud — `~/Documents` alone is enough — it's copied to every machine you own the moment you write it. Every other risk here stops once you fix the setting. **A leaked secret doesn't.** Rotation is the only way out, which is why this one gets handled more carefully than the rest (Section 6). ([OWASP LLM02: Sensitive Information Disclosure](https://genai.owasp.org/llm-top-10/))
+- **More places for secrets to sit** — Using Claude Code introduces places where an API key or token can be exposed in plaintext: configuration files, environment variables, and the conversation transcript. What's more, and if any part of your home directory syncs to the cloud — `~/Documents` alone is enough — it's copied to every machine you own the moment you write it. Every other risk here stops once you fix the setting. **A leaked secret doesn't.** Rotation is the only way out, which is why this one gets handled more carefully than the rest (Section 6). ([OWASP LLM02: Sensitive Information Disclosure](https://genai.owasp.org/llm-top-10/))
 - **Limiting damage in an already-compromised environment** — If your machine is hit by RCE (Remote Code Execution), malware, or a supply chain attack, Claude Code falls under that compromise too. Hardening shrinks the blast radius — the scope of damage — so that even if an attacker uses Claude Code as a stepping stone, what they can do through it is limited.
 
 These are not hypothetical. They are the reason guardrails exist: to ensure that when things go wrong — and they will — the damage is contained.
@@ -462,9 +462,9 @@ But database operations and access to sensitive files can't be judged from the s
 Deny rules use glob pattern matching, which has inherent limitations:
 
 Examples:
-- `Bash(sudo *)` blocks `sudo rm -rf /` but not a script that internally calls `sudo`
-- `Bash(sh *)` blocks `curl url | sh` but not `curl url | python -`
-- `Bash(rm -rf *)` blocks `rm -rf /tmp` but not a Makefile target that runs `rm -rf` internally
+- `Bash(sudo *)` blocks `sudo rm -rf /` but not a script that internally calls `sudo`.
+- `Bash(sh *)` blocks `curl url | sh` but not `curl url | python -`.
+- `Bash(rm -rf *)` blocks `rm -rf /tmp` but not a Makefile target that runs `rm -rf` internally.
 
 This is where **Hooks** come in — shell scripts that run at specific points in Claude Code's lifecycle. The most useful one is `PreToolUse` — right before a tool call executes. Deny rules only do pattern matching on the command string, so they can only judge whether the surface text matches. Hooks receive the full command as JSON, allowing much finer-grained decisions. See the examples below.
 
@@ -869,4 +869,4 @@ Note that Claude Code has no dedicated subcommand to run a one-off command in th
 
 - [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) — Covers key risks and best practices for AI agent systems: tool permission minimization, prompt injection prevention, human-in-the-loop controls, and more.
 - [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Prompt_Injection_Prevention_Cheat_Sheet.html) — Technical guidance on defending against prompt injection attacks.
-- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — The broader threat landscape for LLM-powered applications.
+- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — The broader threat landscape for LLM-powered applications

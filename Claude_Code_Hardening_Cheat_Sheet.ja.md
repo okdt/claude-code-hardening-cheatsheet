@@ -478,9 +478,9 @@ deny ルールは Claude Code のハーネス（CLI ツール本体）が強制�
 deny ルールは glob パターンマッチングを使うため、本質的に限界があります：
 
 例：
-- `Bash(sudo *)` は `sudo rm -rf /` をブロックしますが、内部で `sudo` を呼ぶスクリプトは通る
-- `Bash(sh *)` は `curl url | sh` をブロックしますが、`curl url | python -` は通る
-- `Bash(rm -rf *)` は `rm -rf /tmp` をブロックしますが、Makefile 内の `rm -rf` は通る
+- `Bash(sudo *)` は `sudo rm -rf /` をブロックしますが、内部で `sudo` を呼ぶスクリプトは通ります。
+- `Bash(sh *)` は `curl url | sh` をブロックしますが、`curl url | python -` は通ります。
+- `Bash(rm -rf *)` は `rm -rf /tmp` をブロックしますが、Makefile 内の `rm -rf` は通ります。
 
 そこで、ここで紹介する **Hooks** は Claude Code のライフサイクルの特定のタイミングで実行されるカスタムシェルスクリプトです。最も重要なのは**ツール呼び出しの実行前**（`PreToolUse`）です。コマンドパターンしかマッチできない deny ルールとは異なり、Hook スクリプトはコマンド全体を JSON として受け取り、任意のロジックを適用できます。引数の検査、ファイル内容の確認、外部システムへの問い合わせや呼び出しのブロックなどです。
 
