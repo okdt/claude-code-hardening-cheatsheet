@@ -12,10 +12,10 @@ Claude Code は、あなたに代わってシェルコマンドを実行し、�
 
 ### リスク：望まれないエージェントの崩壊 — なぜハードニング（セキュリティ堅牢化）設定が必要なのか
 
-- **エージェントの善意の暴走** — Claude Code は技術的には正しくても、あなたの意図を超えた操作をすることがあります。「整理」のためにファイルを削除したり、「修正」のために force-push したり、頼んでいないパッケージをインストールしたり。（[OWASP LLM09: Overreliance](https://genai.owasp.org/llm-top-10/)）
+- **エージェントの善意の暴走** — Claude Code は技術的には正しくても、あなたの意図を超えた操作をすることがあります。「整理」のためにファイルを削除したり、「修正」のために force-push したり、頼んでいないパッケージをインストールしたりします。（[OWASP LLM09: Overreliance](https://genai.owasp.org/llm-top-10/)）
 - **大きすぎる権限** — デフォルトでは、Claude Code はあなたのユーザーアカウントでできることは何でもできます。deny ルールがなければ、たった一度の「はい」で破壊的なコマンド、認証情報ファイル、リモートシステムへのアクセスを許してしまいます。（[OWASP LLM06: Excessive Agency](https://genai.owasp.org/llm-top-10/)）
 - **間接的プロンプトインジェクション** — Claude Code が処理するコンテンツ（ソースコード、ドキュメント、Webページ）に、動作に影響を与える指示が紛れ込んでいることがあります。攻撃者は、Claude が通常の作業中に読むファイルや依存関係に悪意あるプロンプトを埋め込むことができます。（[OWASP LLM01: Prompt Injection](https://genai.owasp.org/llm-top-10/)）
-- **秘密の置き場所が増える** — 設定ファイル、環境変数、そして会話の transcript。Claude Code を使うと、API キーやトークンが平文で残りうる場所が増えます。ホームディレクトリをクラウド同期していれば、書いた瞬間に全端末へ複製されます。ほかのリスクは設定を直せば止まりますが、**漏れた秘密だけは直せません**。ローテーションするしかない。だからこの一点は、他より慎重に扱います（§6）。（[OWASP LLM02: Sensitive Information Disclosure](https://genai.owasp.org/llm-top-10/)）
+- **秘密の置き場所が増える** — Claude Code を使うと、API キーやトークンが平文で残りうる場所が増えます。設定ファイル、環境変数、そして会話の transcript です。クラウド同期の範囲に入っていれば、書いた瞬間に、同期しているすべての端末へ複製されます。ほかのリスクは設定を直せば止まりますが、**漏れた秘密だけは直せません**。ローテーションするしかありません。それで、この一点は他より慎重に扱います（§6）。（[OWASP LLM02: Sensitive Information Disclosure](https://genai.owasp.org/llm-top-10/)）
 - **すでに侵害された環境でも被害を抑える** — マシンが RCE（Remote Code Execution）やマルウェア、サプライチェーン攻撃にやられた場合、Claude Code もその影響下に入ります。ハードニングでブラスト半径 — 被害の及ぶ範囲 — を小さくしておけば、攻撃者が Claude Code を踏み台にしても、やれることを絞れます。
 
 これらは仮定の話ではありません。ガードレールが存在する理由です。問題が起きたとき — いずれ必ず起きますが... — 被害を封じ込めたい、そんな自分とみなさんのために書きました。
@@ -27,8 +27,8 @@ Claude Code は、あなたに代わってシェルコマンドを実行し、�
 2. **パーミッション(allow/deny/ask/default)** - Claude Code のコンソールからツール（Bash コマンド、ファイル編集など）が呼び出されたときに「常に許可 / 毎回確認 / 拒否 / デフォルト（設定しない）」を制御するルールです。パーミッションはツール呼び出し単位のきめ細かいアクセス制御を担います。ask の活用で **Human-In-The-Loop** - 目視確認の仕組み化が可能になります。
 3. **フック(hooks + PreToolUse)** — ツール呼び出しの前後にシェルスクリプトを自動的に実行する仕組みです。パーミッションの allow/deny では対応しきれない、よりきめ細かいパターンマッチや環境固有のカスタムチェックを差し込めます。
 4. **ログ** - エンタープライズの現場や、この仕組み自体のデバッグで要ることがあります。簡単に触れています。
-5. **シークレット管理(secrets management)** - API キーやトークンをどこに置き、どこに置かないか。設定ファイル・環境変数・transcript のどこにも平文を残さないための道具立てです。1〜4 とは性質が違います。設定を間違えても直せますが、漏れた秘密は直せません。
-6. **データ保持(data retention)** - 会話の transcript やセッションログを、どれだけの期間ローカルに残すか。何をさせるかではなく、どれだけ痕跡を残すかの話です。保持期間は明示的に決めておきます。
+5. **シークレット管理(secrets management)** - API キーやトークンをどこに置き、どこに置かないか——設定ファイル・環境変数・transcript のどこにも平文を残さないための道具立てです。1〜4 とは性質が違います。設定を間違えても直せますが、漏れた秘密は直せません。
+6. **データ保持(data retention)** - 会話の transcript やセッションログを、どれだけの期間ローカルに残すか——何をさせるかではなく、どれだけ痕跡を残すかの話です。保持期間は明示的に決めておきます。
 
 > **ポイント:** 防御の手立てを1段ではなく、何段も重ねて仕込む。この考え方を **多層防御** といいます。一枚が破られても、次の層が残る。
 
@@ -306,7 +306,7 @@ AIアシスタント自身が権限昇格すべきではありません。`sudo`
 
 限界も書いておきます。`curl ... | python -` は上のルールでは止まりません。インタプリタを数え上げ始めるときりがないので、ここから先は §2 のネットワーク許可リストの仕事です（許可していないドメインには、そもそも到達できません）。また `bash build.sh` のような正当な実行も止まるので、煩わしければ `bash` は ask に落としてください。
 
-いちばん確実なのは、こうしたコマンドを Claude に実行させないことです。提案された内容は自分の手で打つ。ひと手間で、この種の事故はほぼ避けられます。
+いちばん確実なのは、こうしたコマンドを Claude に実行させないことです。提案された内容は、自分の手で打ちます。ひと手間で、この種の事故はほぼ避けられます。
 
 ### 4.6 Deny — リモートアクセス
 
@@ -456,7 +456,7 @@ AIアシスタントがコンテキスト把握のためにメッセージを**�
 
 `psql`、`mysql`、`mongosh`、`sqlite3` などは破壊的な操作（`DROP TABLE`、`DELETE FROM`）が可能ですが、Claude Code の deny ルールはコマンドの引数の中身までは区別できません。`Bash(psql *)` を deny にすると、分析に必要な `SELECT` クエリも含めてすべてブロックされてしまいます。
 
-**推奨:** データベースコマンドは `deny` で一律に止めるのではなく、`ask` で一度受け止める。プロンプトが出たその場で、無害な `SELECT` と取り返しのつかない `DROP TABLE` を、自分の目で振り分けられます。
+**推奨:** データベースコマンドは `deny` で一律に止めるのではなく、`ask` で一度受け止めます。プロンプトが出たその場で、無害な `SELECT` と取り返しのつかない `DROP TABLE` を、自分の目で振り分けられます。
 
 ### 4.13 Allow — 信頼できる操作
 
@@ -478,9 +478,9 @@ deny ルールは Claude Code のハーネス（CLI ツール本体）が強制�
 deny ルールは glob パターンマッチングを使うため、本質的に限界があります：
 
 例：
-- `Bash(sudo *)` は `sudo rm -rf /` をブロックしますが、内部で `sudo` を呼ぶスクリプトは通る
-- `Bash(sh *)` は `curl url | sh` をブロックしますが、`curl url | python -` は通る
-- `Bash(rm -rf *)` は `rm -rf /tmp` をブロックしますが、Makefile 内の `rm -rf` は通る
+- `Bash(sudo *)` は `sudo rm -rf /` をブロックしますが、内部で `sudo` を呼ぶスクリプトは通ります。
+- `Bash(sh *)` は `curl url | sh` をブロックしますが、`curl url | python -` は通ります。
+- `Bash(rm -rf *)` は `rm -rf /tmp` をブロックしますが、Makefile 内の `rm -rf` は通ります。
 
 そこで、ここで紹介する **Hooks** は Claude Code のライフサイクルの特定のタイミングで実行されるカスタムシェルスクリプトです。最も重要なのは**ツール呼び出しの実行前**（`PreToolUse`）です。コマンドパターンしかマッチできない deny ルールとは異なり、Hook スクリプトはコマンド全体を JSON として受け取り、任意のロジックを適用できます。引数の検査、ファイル内容の確認、外部システムへの問い合わせや呼び出しのブロックなどです。
 
@@ -491,12 +491,12 @@ deny ルールは glob パターンマッチングを使うため、本質的に
 
 > `Read` と `Edit` の deny ルールは、Claude の組み込みファイルツールに加えて、Claude Code が認識する Bash のファイルコマンド（`cat`、`head`、`tail`、`sed` など）にも適用されます。ファイルを間接的に読み書きする任意のサブプロセス、たとえば自分でファイルを開く Python や Node のスクリプトには適用されません。
 
-`Read(**/.env)` を deny に入れておけば、`cat .env` のような素直な読み取りは止まります。抜けるのはその先です。スクリプトを書いて中でファイルを開く、あるいは Claude Code が「ファイルを読むコマンド」と認識しないツールを使う。deny リストが見ているのはコマンド文字列であって、プロセスが実際に何を開くかではありません。
+`Read(**/.env)` を deny に入れておけば、`cat .env` のような素直な読み取りは止まります。抜けるのはその先です。スクリプトを書いて中でファイルを開いたり、Claude Code が「ファイルを読むコマンド」と認識しないツールを使ったりする場合です。deny リストが見ているのはコマンド文字列であって、プロセスが実際に何を開くかではありません。
 
 
 ### 活用例1: データベースコマンドの破壊的SQLをブロック
 
-**課題:** `Bash(psql *)` を deny にすると `SELECT` もブロックされてしまいます。でも `DROP TABLE` や `DELETE FROM` は実行前に止めたい。
+**課題:** `Bash(psql *)` を deny にすると `SELECT` もブロックされてしまいます。でも `DROP TABLE` や `DELETE FROM` は、実行前に止めたいところです。
 
 **Hook スクリプト** — `~/.claude/hooks/block-destructive-sql.sh` として保存：
 
@@ -589,7 +589,7 @@ exit 0
 
 ### 活用例3: main/master ブランチへの push をブロック
 
-**課題:** `git push` は便利なので `ask` にしているが、うっかり承認すると main に直接 push できてしまう。deny ルールの `Bash(git push *)` ではブランチを区別できない。
+**課題:** `git push` は便利なので `ask` にしていますが、うっかり承認すると main に直接 push できてしまいます。deny ルールの `Bash(git push *)` では、ブランチを区別できません。
 
 **Hook スクリプト** — `~/.claude/hooks/block-push-to-main.sh` として保存：
 
@@ -650,7 +650,7 @@ chmod +x ~/.claude/hooks/block-push-to-main.sh
 
 ### 活用例4: サンドボックスの一時無効化を記録する
 
-**課題:** サンドボックスを有効にしても、Claude は失敗したコマンドを `dangerouslyDisableSandbox` を付けて外で再試行することがある（§2 参照）。完全に封じる（`allowUnsandboxedCommands: false`）ほどではないが、「いつ・どのコマンドで外に出たか」は把握して、後で許可リストを見直したい。
+**課題:** サンドボックスを有効にしても、Claude は失敗したコマンドを `dangerouslyDisableSandbox` を付けて外で再試行することがあります（§2 参照）。完全に封じる（`allowUnsandboxedCommands: false`）ほどではありませんが、「いつ・どのコマンドで外に出たか」は把握して、後で許可リストを見直したいところです。
 
 **考え方:** ブロックはせず、記録だけします。`PreToolUse(Bash)` で `dangerouslyDisableSandbox: true` が付いた呼び出しを検出し、タイムスタンプとコマンドを TSV に追記します。終了コードは 0 のままにします（実行は止めません）。溜まったログを定期的に眺めれば、「このドメインを `allowedDomains` に足せば抜けずに済む」「このツールは `excludedCommands` に入れればいい」といった調整に気づけます。
 
@@ -786,7 +786,7 @@ Bedrock や Vertex 経由なら `awsAuthRefresh` / `awsCredentialExport` / `gcpA
 
 > **`settings.json` の `env` ブロックに値を書かない。**
 
-例外はありません。「あとで消すから」「ローカルだけだから」で書いた行が、そのまま同期・バックアップ・スクリーンショット・画面共有に乗ります。ホームディレクトリをクラウド同期しているなら、書いた瞬間に複製されます。`.claude/settings.local.json` も同じです。gitignore されていても、同期からは守られません。
+例外はありません。「あとで消すから」「ローカルだけだから」で書いた行が、そのままバックアップ・スクリーンショット・画面共有に乗ります。同期の対象になっているファイルなら、同期にも乗ります。クラウド同期をやめてください、という話ではありません。どこまで運ばれるかを数え上げるより、値を書かないほうが確実だ、ということです。gitignore されていても、同期からは守られません。
 
 MCP サーバに渡すしかない場合は、起動時にだけ注入して、そのプロセスに閉じ込めます。
 
@@ -794,7 +794,7 @@ MCP サーバに渡すしかない場合は、起動時にだけ注入して、�
 eval $(get-secret --export API_KEY MY_TOKEN) && exec my-mcp-server
 ```
 
-対話シェルへ `export` して放置しない。`.env` に書き戻さない。保管には OS キーチェーン、[1Password CLI](https://developer.1password.com/docs/cli/)、[Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/)、[HashiCorp Vault](https://developer.hashicorp.com/vault)、各クラウドの Secret Manager、[`pass`](https://www.passwordstore.org/)、[SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age) といった選択肢があります。どれを選んでも狙いは同じで、**設定ファイルにもシェル履歴にも平文の値を残さず、必要なときにだけ取り出す**ことです。
+対話シェルへ `export` したまま放置しません。`.env` にも書き戻しません。保管には OS キーチェーン、[1Password CLI](https://developer.1password.com/docs/cli/)、[Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/)、[HashiCorp Vault](https://developer.hashicorp.com/vault)、各クラウドの Secret Manager、[`pass`](https://www.passwordstore.org/)、[SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age) といった選択肢があります。どれを選んでも狙いは同じで、**設定ファイルにもシェル履歴にも平文の値を残さず、必要なときにだけ取り出す**ことです。
 
 **(3) 環境変数を子プロセスへ流さない**
 
@@ -840,7 +840,7 @@ eval $(get-secret --export API_KEY MY_TOKEN) && exec my-mcp-server
 長くするほど復旧や分析に使える反面、機密の痕跡が長く残ります。次の3点で決めます。
 
 - **復旧の時間軸は短い**: 中断・クラッシュしたセッションを後から復元する用途は、せいぜい数日〜1週間先まで遡れれば足ります。
-- **恒久的に必要な知見は別管理にする**: 結論・決定事項・運用ルールは、transcript ではなく別のメモリ／ドキュメントに蒸留しておく。そうすれば transcript は「揮発してよい作業ログ」になり、短めの保持でも知識を失いません。
+- **恒久的に必要な知見は別管理にする**: 結論・決定事項・運用ルールは、transcript ではなく別のメモリ／ドキュメントに蒸留しておきます。そうすれば transcript は「揮発してよい作業ログ」になり、短めの保持でも知識を失いません。
 - **露出窓を詰めたいか**: 値を短くするほど、transcript に乗った機密がローカルから消えるのが早くなります。
 
 > **目安**: 多くの個人・小規模運用では 30 日前後が無難です（復旧に十分で、分析にも 1 か月分ある）。痕跡を詰めたいなら 14 日も実用的。2 週間あれば復旧用途でまず困りません。60〜90 日へ延ばす積極的な理由は、古い transcript を実際に掘り返す運用がない限り薄いはずです。
@@ -867,10 +867,10 @@ eval $(get-secret --export API_KEY MY_TOKEN) && exec my-mcp-server
 書いただけでは信用できません。設定は複数のファイルに分かれていて、上位が下位を覆します。最後に一度、効いているかを見てください。
 
 - **`/sandbox`** — Config タブに、マージ後の解決済みサンドボックス設定が出ます。書いたつもりのキーがここに出ていなければ、効いていません。Overrides タブでは、エスケープハッチを封じたか（Strict モードか）も確認できます
-- **`/permissions`** — いま効いている allow / ask / deny の一覧。Recently denied タブには、直近で止まったものが並びます
+- **`/permissions`** — いま効いている allow / ask / deny の一覧です。Recently denied タブには、直近で止まったものが並びます
 - **`claude doctor`** — セッションの外から実行できます。インストールの健全性を確認し、カレントディレクトリの設定ファイルを信頼プロンプトなしで読みます
 
-そのうえで、実際にコマンドを一つ走らせてください。許可していないドメインへの `curl` が止まるか。作業ディレクトリの外へ書けないか。**ハードニングで最も多い事故は「設定したつもり」です。**
+そのうえで、実際にコマンドを一つ走らせてください。許可していないドメインへの `curl` が止まるか、作業ディレクトリの外へ書けないかを確かめます。**ハードニングで最も多い事故は「設定したつもり」です。**
 
 なお、Claude Code には「サンドボックスの中だけで試しにコマンドを走らせる」専用のサブコマンドはありません。確認は、解決済みの設定を目で見ることと、実際に動かしてみることの 2 つで行います。
 
@@ -889,6 +889,6 @@ eval $(get-secret --export API_KEY MY_TOKEN) && exec my-mcp-server
 
 ## 関連チートシート・参考文献
 
-- [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) — AIエージェントシステムの主要リスクとベストプラクティス：ツール権限の最小化、プロンプトインジェクション対策、Human-in-the-Loop など。
-- [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Prompt_Injection_Prevention_Cheat_Sheet.html) — プロンプトインジェクション攻撃への防御に関する技術ガイダンス。
-- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — LLM アプリケーションにおける脅威の全体像。
+- [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) — AIエージェントシステムの主要リスクとベストプラクティス：ツール権限の最小化、プロンプトインジェクション対策、Human-in-the-Loop など
+- [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Prompt_Injection_Prevention_Cheat_Sheet.html) — プロンプトインジェクション攻撃への防御に関する技術ガイダンス
+- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — LLM アプリケーションにおける脅威の全体像
