@@ -765,7 +765,7 @@ There's one rule.
 
 > **Never put a value in the `env` block of `settings.json`.**
 
-No exceptions. The line you added because "I'll delete it later" or "it's only local" rides along into your sync, your backups, your screenshots, and your screen shares. If the file itself falls inside what you sync, it's replicated the instant you save: `~/.claude/settings.json` once your home directory or `~/.claude` is in the sync, and a project's `.claude/settings.local.json` whenever that project lives in a synced folder such as `~/Documents`. Gitignored isn't the same as protected, and sync doesn't care what git thinks.
+No exceptions. The line you added because "I'll delete it later" or "it's only local" rides along into your sync, your backups, your screenshots, and your screen shares. If the file itself falls inside what you sync, it's replicated the instant you save: `~/.claude/settings.json` once your home directory or `~/.claude` is in the sync, and a project's `.claude/settings.local.json` whenever that project lives in a synced folder such as `~/Documents`. Read the location of the bytes, not the path you type: if the real file sits in the synced folder and the familiar path is a symlink pointing at it, the file is in the sync. Gitignored isn't the same as protected, and sync doesn't care what git thinks.
 
 When something has to reach an MCP server, inject it at launch and keep it confined to that process.
 
