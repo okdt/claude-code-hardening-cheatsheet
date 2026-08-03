@@ -765,7 +765,7 @@ There's one rule.
 
 > **Never put a value in the `env` block of `settings.json`.**
 
-No exceptions. The line you added because "I'll delete it later" or "it's only local" rides along into your sync, your backups, your screenshots, and your screen shares. None of which is an argument against syncing your machine. It's that tracing where the line ends up is harder than not writing it. Gitignored isn't the same as protected, and sync doesn't care what git thinks.
+No exceptions. The line you added because "I'll delete it later" or "it's only local" rides along into your backups, your screenshots, and your screen shares. If that file is in a sync, it rides into the sync too. None of which is an argument against syncing your machine. It's that tracing where the line ends up is harder than not writing it. Gitignored isn't the same as protected, and sync doesn't care what git thinks.
 
 When something has to reach an MCP server, inject it at launch and keep it confined to that process.
 
