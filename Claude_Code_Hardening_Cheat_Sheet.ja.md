@@ -15,7 +15,7 @@ Claude Code は、あなたに代わってシェルコマンドを実行し、�
 - **エージェントの善意の暴走** — Claude Code は技術的には正しくても、あなたの意図を超えた操作をすることがあります。「整理」のためにファイルを削除したり、「修正」のために force-push したり、頼んでいないパッケージをインストールしたりします。（[OWASP LLM09: Overreliance](https://genai.owasp.org/llm-top-10/)）
 - **大きすぎる権限** — デフォルトでは、Claude Code はあなたのユーザーアカウントでできることは何でもできます。deny ルールがなければ、たった一度の「はい」で破壊的なコマンド、認証情報ファイル、リモートシステムへのアクセスを許してしまいます。（[OWASP LLM06: Excessive Agency](https://genai.owasp.org/llm-top-10/)）
 - **間接的プロンプトインジェクション** — Claude Code が処理するコンテンツ（ソースコード、ドキュメント、Webページ）に、動作に影響を与える指示が紛れ込んでいることがあります。攻撃者は、Claude が通常の作業中に読むファイルや依存関係に悪意あるプロンプトを埋め込むことができます。（[OWASP LLM01: Prompt Injection](https://genai.owasp.org/llm-top-10/)）
-- **秘密の置き場所が増える** — 設定ファイル、環境変数、そして会話の transcript。Claude Code を使うと、API キーやトークンが平文で残りうる場所が増えます。ホームディレクトリの配下を——`~/Documents` だけ、といった一部でも——クラウド同期していれば、書いた瞬間に全端末へ複製されます。ほかのリスクは設定を直せば止まりますが、**漏れた秘密だけは直せません**。ローテーションするしかありません。それで、この一点は他より慎重に扱います（§6）。（[OWASP LLM02: Sensitive Information Disclosure](https://genai.owasp.org/llm-top-10/)）
+- **秘密の置き場所が増える** — Claude Code を使うと、API キーやトークンが平文で残りうる場所が増えます。設定ファイル、環境変数、そして会話の transcript です。ホームディレクトリの配下を——`~/Documents` だけ、といった一部でも——クラウド同期していれば、書いた瞬間に全端末へ複製されます。ほかのリスクは設定を直せば止まりますが、**漏れた秘密だけは直せません**。ローテーションするしかありません。それで、この一点は他より慎重に扱います（§6）。（[OWASP LLM02: Sensitive Information Disclosure](https://genai.owasp.org/llm-top-10/)）
 - **すでに侵害された環境でも被害を抑える** — マシンが RCE（Remote Code Execution）やマルウェア、サプライチェーン攻撃にやられた場合、Claude Code もその影響下に入ります。ハードニングでブラスト半径 — 被害の及ぶ範囲 — を小さくしておけば、攻撃者が Claude Code を踏み台にしても、やれることを絞れます。
 
 これらは仮定の話ではありません。ガードレールが存在する理由です。問題が起きたとき — いずれ必ず起きますが... — 被害を封じ込めたい、そんな自分とみなさんのために書きました。
@@ -27,8 +27,8 @@ Claude Code は、あなたに代わってシェルコマンドを実行し、�
 2. **パーミッション(allow/deny/ask/default)** - Claude Code のコンソールからツール（Bash コマンド、ファイル編集など）が呼び出されたときに「常に許可 / 毎回確認 / 拒否 / デフォルト（設定しない）」を制御するルールです。パーミッションはツール呼び出し単位のきめ細かいアクセス制御を担います。ask の活用で **Human-In-The-Loop** - 目視確認の仕組み化が可能になります。
 3. **フック(hooks + PreToolUse)** — ツール呼び出しの前後にシェルスクリプトを自動的に実行する仕組みです。パーミッションの allow/deny では対応しきれない、よりきめ細かいパターンマッチや環境固有のカスタムチェックを差し込めます。
 4. **ログ** - エンタープライズの現場や、この仕組み自体のデバッグで要ることがあります。簡単に触れています。
-5. **シークレット管理(secrets management)** - API キーやトークンをどこに置き、どこに置かないか。設定ファイル・環境変数・transcript のどこにも平文を残さないための道具立てです。1〜4 とは性質が違います。設定を間違えても直せますが、漏れた秘密は直せません。
-6. **データ保持(data retention)** - 会話の transcript やセッションログを、どれだけの期間ローカルに残すか。何をさせるかではなく、どれだけ痕跡を残すかの話です。保持期間は明示的に決めておきます。
+5. **シークレット管理(secrets management)** - API キーやトークンをどこに置き、どこに置かないか——設定ファイル・環境変数・transcript のどこにも平文を残さないための道具立てです。1〜4 とは性質が違います。設定を間違えても直せますが、漏れた秘密は直せません。
+6. **データ保持(data retention)** - 会話の transcript やセッションログを、どれだけの期間ローカルに残すか——何をさせるかではなく、どれだけ痕跡を残すかの話です。保持期間は明示的に決めておきます。
 
 > **ポイント:** 防御の手立てを1段ではなく、何段も重ねて仕込む。この考え方を **多層防御** といいます。一枚が破られても、次の層が残る。
 
@@ -840,7 +840,7 @@ eval $(get-secret --export API_KEY MY_TOKEN) && exec my-mcp-server
 長くするほど復旧や分析に使える反面、機密の痕跡が長く残ります。次の3点で決めます。
 
 - **復旧の時間軸は短い**: 中断・クラッシュしたセッションを後から復元する用途は、せいぜい数日〜1週間先まで遡れれば足ります。
-- **恒久的に必要な知見は別管理にする**: 結論・決定事項・運用ルールは、transcript ではなく別のメモリ／ドキュメントに蒸留しておく。そうすれば transcript は「揮発してよい作業ログ」になり、短めの保持でも知識を失いません。
+- **恒久的に必要な知見は別管理にする**: 結論・決定事項・運用ルールは、transcript ではなく別のメモリ／ドキュメントに蒸留しておきます。そうすれば transcript は「揮発してよい作業ログ」になり、短めの保持でも知識を失いません。
 - **露出窓を詰めたいか**: 値を短くするほど、transcript に乗った機密がローカルから消えるのが早くなります。
 
 > **目安**: 多くの個人・小規模運用では 30 日前後が無難です（復旧に十分で、分析にも 1 か月分ある）。痕跡を詰めたいなら 14 日も実用的。2 週間あれば復旧用途でまず困りません。60〜90 日へ延ばす積極的な理由は、古い transcript を実際に掘り返す運用がない限り薄いはずです。
@@ -867,7 +867,7 @@ eval $(get-secret --export API_KEY MY_TOKEN) && exec my-mcp-server
 書いただけでは信用できません。設定は複数のファイルに分かれていて、上位が下位を覆します。最後に一度、効いているかを見てください。
 
 - **`/sandbox`** — Config タブに、マージ後の解決済みサンドボックス設定が出ます。書いたつもりのキーがここに出ていなければ、効いていません。Overrides タブでは、エスケープハッチを封じたか（Strict モードか）も確認できます
-- **`/permissions`** — いま効いている allow / ask / deny の一覧。Recently denied タブには、直近で止まったものが並びます
+- **`/permissions`** — いま効いている allow / ask / deny の一覧です。Recently denied タブには、直近で止まったものが並びます
 - **`claude doctor`** — セッションの外から実行できます。インストールの健全性を確認し、カレントディレクトリの設定ファイルを信頼プロンプトなしで読みます
 
 そのうえで、実際にコマンドを一つ走らせてください。許可していないドメインへの `curl` が止まるか、作業ディレクトリの外へ書けないかを確かめます。**ハードニングで最も多い事故は「設定したつもり」です。**
@@ -889,6 +889,6 @@ eval $(get-secret --export API_KEY MY_TOKEN) && exec my-mcp-server
 
 ## 関連チートシート・参考文献
 
-- [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) — AIエージェントシステムの主要リスクとベストプラクティス：ツール権限の最小化、プロンプトインジェクション対策、Human-in-the-Loop など。
-- [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Prompt_Injection_Prevention_Cheat_Sheet.html) — プロンプトインジェクション攻撃への防御に関する技術ガイダンス。
-- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — LLM アプリケーションにおける脅威の全体像。
+- [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) — AIエージェントシステムの主要リスクとベストプラクティス：ツール権限の最小化、プロンプトインジェクション対策、Human-in-the-Loop など
+- [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Prompt_Injection_Prevention_Cheat_Sheet.html) — プロンプトインジェクション攻撃への防御に関する技術ガイダンス
+- [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) — LLM アプリケーションにおける脅威の全体像
